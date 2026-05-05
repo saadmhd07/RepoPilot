@@ -1,0 +1,13 @@
+Review the following GitHub pull request.
+
+Produce:
+1. A short executive summary
+2. Potential risks and probable bugs
+3. Missing or insufficient tests
+4. Concrete improvement suggestions
+
+Only use evidence visible in the provided pull request context.
+
+Pull request context:
+
+{{pull_request_context}}
