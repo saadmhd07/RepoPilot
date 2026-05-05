@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 from urllib.parse import urlparse
 
 from repopilot.config import Settings
@@ -17,6 +19,11 @@ def build_parser() -> argparse.ArgumentParser:
     review_parser.add_argument("--pr-url", help="GitHub pull request URL")
     review_parser.add_argument("--repo", help="Repository in OWNER/REPO format")
     review_parser.add_argument("--pr-number", type=int, help="Pull request number")
+    review_parser.add_argument(
+        "--from-github-event",
+        action="store_true",
+        help="Read repository and pull request number from the GitHub Actions event payload",
+    )
     review_parser.add_argument("--model", default="gpt-4.1", help="OpenAI model to use")
     review_parser.add_argument(
         "--post",
@@ -43,7 +50,12 @@ def run_review(args: argparse.Namespace) -> None:
     from repopilot.llm import OpenAIReviewer
 
     settings = Settings.from_env()
-    ref = resolve_pr_ref(pr_url=args.pr_url, repo=args.repo, pr_number=args.pr_number)
+    ref = resolve_pr_ref(
+        pr_url=args.pr_url,
+        repo=args.repo,
+        pr_number=args.pr_number,
+        from_github_event=args.from_github_event,
+    )
 
     github = GitHubClient(token=settings.github_token, api_url=settings.github_api_url)
     pr = github.get_pull_request(ref)
@@ -73,7 +85,16 @@ def run_review(args: argparse.Namespace) -> None:
     print(markdown)
 
 
-def resolve_pr_ref(*, pr_url: str | None, repo: str | None, pr_number: int | None) -> PullRequestRef:
+def resolve_pr_ref(
+    *,
+    pr_url: str | None,
+    repo: str | None,
+    pr_number: int | None,
+    from_github_event: bool,
+) -> PullRequestRef:
+    if from_github_event:
+        return parse_github_event()
+
     if pr_url:
         return parse_pr_url(pr_url)
 
@@ -97,3 +118,24 @@ def parse_repo(repo: str) -> tuple[str, str]:
     if len(parts) != 2 or not parts[0] or not parts[1]:
         raise ValueError("Repository must be in OWNER/REPO format")
     return parts[0], parts[1]
+
+
+def parse_github_event() -> PullRequestRef:
+    repo = os.getenv("GITHUB_REPOSITORY", "").strip()
+    event_path = os.getenv("GITHUB_EVENT_PATH", "").strip()
+
+    if not repo:
+        raise ValueError("Missing GITHUB_REPOSITORY for --from-github-event")
+    if not event_path:
+        raise ValueError("Missing GITHUB_EVENT_PATH for --from-github-event")
+
+    owner, repo_name = parse_repo(repo)
+
+    with open(event_path, "r", encoding="utf-8") as handle:
+        event = json.load(handle)
+
+    pull_request = event.get("pull_request")
+    if not isinstance(pull_request, dict) or "number" not in pull_request:
+        raise ValueError("GitHub event does not contain pull_request.number")
+
+    return PullRequestRef(owner=owner, repo=repo_name, number=int(pull_request["number"]))

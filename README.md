@@ -7,6 +7,8 @@ RepoPilot is a local-first CLI that reviews an existing GitHub pull request by:
 3. Rendering a structured markdown review
 4. Optionally posting that review back to the PR
 
+It can run locally first, then as a reusable GitHub Action on `pull_request` events.
+
 ## Requirements
 
 - Python 3.10+
@@ -51,6 +53,52 @@ repopilot review \
   --model gpt-4.1
 ```
 
+Inside GitHub Actions, RepoPilot can derive the PR directly from the event payload:
+
+```bash
+repopilot review --from-github-event --model gpt-5.2 --post
+```
+
+## GitHub Action
+
+RepoPilot ships as a composite GitHub Action via `action.yml`.
+
+Minimal workflow:
+
+```yaml
+name: RepoPilot
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: saadmhd07/RepoPilot@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          model: gpt-5.2
+```
+
+A ready-to-copy example also lives in `examples/review.yml`.
+
+Required repository secret:
+
+- `OPENAI_API_KEY`
+
+Notes:
+
+- `secrets.GITHUB_TOKEN` is enough if the workflow has `pull-requests: write` and `issues: write`
+- the action reads the PR from `GITHUB_EVENT_PATH`, so no PR URL input is needed in CI
+
 ## Environment variables
 
 Optional overrides:
@@ -72,3 +120,4 @@ Optional overrides:
 
 - This first version posts a single PR-level comment, not inline review comments.
 - Large pull requests are truncated before being sent to the model.
+- Re-running the action updates the existing RepoPilot comment instead of posting duplicates.
