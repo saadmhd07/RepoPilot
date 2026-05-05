@@ -1,4 +1,4 @@
-from repopilot.github import GitHubClient, PullRequestRef
+from repopilot.github import GitHubClient, IssueComment, PullRequestRef
 
 
 def test_find_repopilot_comment_returns_latest_marked_comment():
@@ -23,7 +23,11 @@ def test_upsert_repopilot_comment_updates_existing_comment():
     ref = PullRequestRef(owner="octocat", repo="hello", number=1)
     calls: list[tuple[str, int | None, str]] = []
 
-    client.find_repopilot_comment = lambda pr_ref: type("Comment", (), {"comment_id": 22})()  # type: ignore[method-assign]
+    client.find_repopilot_comment = lambda pr_ref: IssueComment(  # type: ignore[method-assign]
+        comment_id=22,
+        body="old body",
+        user_login="octocat",
+    )
     client.update_issue_comment = lambda pr_ref, comment_id, body: calls.append(  # type: ignore[method-assign]
         ("update", comment_id, body)
     ) or {"id": comment_id}
@@ -32,6 +36,26 @@ def test_upsert_repopilot_comment_updates_existing_comment():
 
     assert action == "updated"
     assert calls == [("update", 22, "updated body")]
+
+
+def test_upsert_repopilot_comment_skips_when_unchanged():
+    client = GitHubClient(token="test-token")
+    ref = PullRequestRef(owner="octocat", repo="hello", number=1)
+    calls: list[tuple[str, int | None, str]] = []
+
+    client.find_repopilot_comment = lambda pr_ref: IssueComment(  # type: ignore[method-assign]
+        comment_id=22,
+        body="same body",
+        user_login="octocat",
+    )
+    client.update_issue_comment = lambda pr_ref, comment_id, body: calls.append(  # type: ignore[method-assign]
+        ("update", comment_id, body)
+    ) or {"id": comment_id}
+
+    action = client.upsert_repopilot_comment(ref, "same body")
+
+    assert action == "unchanged"
+    assert calls == []
 
 
 def test_upsert_repopilot_comment_creates_when_missing():

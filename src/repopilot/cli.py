@@ -61,8 +61,13 @@ def run_review(args: argparse.Namespace) -> None:
 
     if args.post:
         action = github.upsert_repopilot_comment(ref, markdown)
-        verb = "Updated" if action == "updated" else "Posted"
-        print(f"{verb} RepoPilot review on {ref.owner}/{ref.repo}#{ref.number}")
+        if action == "created":
+            print(f"Posted RepoPilot review on {ref.owner}/{ref.repo}#{ref.number}")
+            return
+        if action == "updated":
+            print(f"Updated RepoPilot review on {ref.owner}/{ref.repo}#{ref.number}")
+            return
+        print(f"RepoPilot review unchanged on {ref.owner}/{ref.repo}#{ref.number}")
         return
 
     print(markdown)

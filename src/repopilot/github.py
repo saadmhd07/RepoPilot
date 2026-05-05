@@ -95,6 +95,9 @@ class GitHubClient:
             self.post_issue_comment(ref, body)
             return "created"
 
+        if existing_comment.body == body:
+            return "unchanged"
+
         self.update_issue_comment(ref, existing_comment.comment_id, body)
         return "updated"
 
