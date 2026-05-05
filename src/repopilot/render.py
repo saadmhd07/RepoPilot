@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from repopilot.github import REPOPILOT_COMMENT_MARKER
 from repopilot.models import Finding, ReviewReport
 
 
 def render_review_markdown(report: ReviewReport) -> str:
     parts = [
+        REPOPILOT_COMMENT_MARKER,
+        "",
         "## RepoPilot Review",
         "",
         report.summary.strip(),

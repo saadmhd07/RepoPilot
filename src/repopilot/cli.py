@@ -60,8 +60,9 @@ def run_review(args: argparse.Namespace) -> None:
     markdown = render_review_markdown(report)
 
     if args.post:
-        github.post_issue_comment(ref, markdown)
-        print(f"Posted RepoPilot review to {ref.owner}/{ref.repo}#{ref.number}")
+        action = github.upsert_repopilot_comment(ref, markdown)
+        verb = "Updated" if action == "updated" else "Posted"
+        print(f"{verb} RepoPilot review on {ref.owner}/{ref.repo}#{ref.number}")
         return
 
     print(markdown)

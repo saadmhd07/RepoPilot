@@ -1,3 +1,4 @@
+from repopilot.github import REPOPILOT_COMMENT_MARKER
 from repopilot.models import Finding, ReviewReport
 from repopilot.render import render_review_markdown
 
@@ -23,6 +24,7 @@ def test_render_review_markdown():
 
     markdown = render_review_markdown(report)
 
+    assert markdown.startswith(REPOPILOT_COMMENT_MARKER)
     assert "## RepoPilot Review" in markdown
     assert "`src/service.py:42-45`" in markdown
     assert "Missing or Insufficient Tests" in markdown
