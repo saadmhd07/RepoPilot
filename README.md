@@ -63,6 +63,8 @@ repopilot review --from-github-event --model gpt-5.2 --post
 
 RepoPilot ships as a composite GitHub Action via `action.yml`.
 
+For consumers, prefer a version tag instead of `@main`.
+
 Minimal workflow:
 
 ```yaml
@@ -81,7 +83,7 @@ jobs:
   review:
     runs-on: ubuntu-latest
     steps:
-      - uses: saadmhd07/RepoPilot@main
+      - uses: saadmhd07/RepoPilot@v0.1.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
@@ -98,6 +100,7 @@ Notes:
 
 - `secrets.GITHUB_TOKEN` is enough if the workflow has `pull-requests: write` and `issues: write`
 - the action reads the PR from `GITHUB_EVENT_PATH`, so no PR URL input is needed in CI
+- pinning to `@v0.1.0` avoids drift from future changes on `main`
 
 ## Environment variables
 
@@ -121,3 +124,21 @@ Optional overrides:
 - This first version posts a single PR-level comment, not inline review comments.
 - Large pull requests are truncated before being sent to the model.
 - Re-running the action updates the existing RepoPilot comment instead of posting duplicates.
+
+## Release
+
+To publish the first reusable action version:
+
+```bash
+git add action.yml README.md examples/review.yml
+git commit -m "Prepare RepoPilot v0.1.0 release"
+git push origin main
+git tag -a v0.1.0 -m "RepoPilot v0.1.0"
+git push origin v0.1.0
+```
+
+Then consumers should reference:
+
+```yaml
+uses: saadmhd07/RepoPilot@v0.1.0
+```
