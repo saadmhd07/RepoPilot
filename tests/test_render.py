@@ -26,5 +26,9 @@ def test_render_review_markdown():
 
     assert markdown.startswith(REPOPILOT_COMMENT_MARKER)
     assert "## RepoPilot Review" in markdown
+    assert "**Summary**" in markdown
+    assert "**Overview** Risks: 1 | Missing tests: 0 | Suggestions: 0" in markdown
     assert "`src/service.py:42-45`" in markdown
+    assert "### Potential Risks (1)" in markdown
+    assert "Recommendation: Validate the payload before access and add a failure-path test." in markdown
     assert "Missing or Insufficient Tests" in markdown

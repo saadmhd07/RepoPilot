@@ -101,6 +101,7 @@ Notes:
 - `secrets.GITHUB_TOKEN` is enough if the workflow has `pull-requests: write` and `issues: write`
 - the action reads the PR from `GITHUB_EVENT_PATH`, so no PR URL input is needed in CI
 - pinning to `@v0.1.0` avoids drift from future changes on `main`
+- if `OPENAI_API_KEY` is missing, the action skips cleanly with a warning instead of failing obscurely
 
 ## Environment variables
 

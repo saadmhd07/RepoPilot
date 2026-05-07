@@ -1,6 +1,6 @@
 import json
 
-from repopilot.cli import parse_github_event, parse_pr_url, parse_repo
+from repopilot.cli import _humanize_github_error, parse_github_event, parse_pr_url, parse_repo
 
 
 def test_parse_pr_url():
@@ -27,3 +27,13 @@ def test_parse_github_event(tmp_path, monkeypatch):
     assert ref.owner == "octocat"
     assert ref.repo == "Hello-World"
     assert ref.number == 42
+
+
+def test_humanize_github_error_for_private_repo_access():
+    message = 'GitHub API error 404: {"message":"Not Found","status":"404"}'
+    assert "private repositories" in _humanize_github_error(message)
+
+
+def test_humanize_github_error_for_permissions():
+    message = "GitHub API error 403: Resource not accessible by personal access token"
+    assert "Check pull request and issue comment permissions" in _humanize_github_error(message)

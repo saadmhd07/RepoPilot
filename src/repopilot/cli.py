@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from repopilot.config import Settings
 from repopilot.diff import build_review_context
-from repopilot.github import GitHubClient, PullRequestRef
+from repopilot.github import GitHubAPIError, GitHubClient, PullRequestRef
 from repopilot.render import render_review_markdown
 
 
@@ -39,8 +39,15 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command == "review":
-        run_review(args)
-        return 0
+        try:
+            run_review(args)
+            return 0
+        except ValueError as exc:
+            return _report_error(str(exc))
+        except GitHubAPIError as exc:
+            return _report_error(_humanize_github_error(str(exc)))
+        except Exception as exc:
+            return _report_error(str(exc))
 
     parser.error(f"Unsupported command: {args.command}")
     return 2
@@ -139,3 +146,25 @@ def parse_github_event() -> PullRequestRef:
         raise ValueError("GitHub event does not contain pull_request.number")
 
     return PullRequestRef(owner=owner, repo=repo_name, number=int(pull_request["number"]))
+
+
+def _report_error(message: str) -> int:
+    if os.getenv("GITHUB_ACTIONS") == "true":
+        print(f"::error::{message}")
+    else:
+        print(f"Error: {message}")
+    return 1
+
+
+def _humanize_github_error(message: str) -> str:
+    if "Resource not accessible by personal access token" in message:
+        return (
+            "GitHub token cannot perform this action. "
+            "Check pull request and issue comment permissions for the repository."
+        )
+    if 'GitHub API error 404: {"message":"Not Found"' in message:
+        return (
+            "GitHub resource not found. "
+            "For private repositories, confirm that the token can access the target repository."
+        )
+    return message

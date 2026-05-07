@@ -10,7 +10,15 @@ def render_review_markdown(report: ReviewReport) -> str:
         "",
         "## RepoPilot Review",
         "",
+        "**Summary**",
         report.summary.strip(),
+        "",
+        (
+            f"**Overview** "
+            f"Risks: {len(report.risks)} | "
+            f"Missing tests: {len(report.missing_tests)} | "
+            f"Suggestions: {len(report.suggestions)}"
+        ),
         "",
         _render_section("Potential Risks", report.risks),
         "",
@@ -25,12 +33,13 @@ def _render_section(title: str, findings: list[Finding]) -> str:
     if not findings:
         return f"### {title}\n\n- None identified from the current diff."
 
-    lines = [f"### {title}", ""]
+    lines = [f"### {title} ({len(findings)})", ""]
     for finding in findings:
         location = _format_location(finding)
         lines.append(
-            f"- **[{finding.severity.upper()}] {finding.title}** (`{location}`): "
-            f"{finding.summary} Recommendation: {finding.recommendation}"
+            f"- **{finding.severity.upper()} · {finding.title}** (`{location}`)\n"
+            f"  {finding.summary}\n"
+            f"  Recommendation: {finding.recommendation}"
         )
     return "\n".join(lines)
 
