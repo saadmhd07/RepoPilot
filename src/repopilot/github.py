@@ -5,7 +5,7 @@ from typing import Any
 
 import requests
 
-REPOPILOT_COMMENT_MARKER = "<!-- repopilot-review -->"
+from repopilot.constants import REPOPILOT_COMMENT_MARKER
 
 
 class GitHubAPIError(RuntimeError):

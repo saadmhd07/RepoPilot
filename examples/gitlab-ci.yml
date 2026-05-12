@@ -1,0 +1,10 @@
+repopilot_review:
+  image: python:3.11-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  variables:
+    PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  before_script:
+    - python -m pip install git+https://github.com/saadmhd07/RepoPilot.git@main
+  script:
+    - repopilot review --from-gitlab-ci --model gpt-5.2 --post

@@ -1,21 +1,22 @@
 # RepoPilot
 
-RepoPilot is a local-first CLI that reviews an existing GitHub pull request by:
+RepoPilot is a local-first CLI that reviews an existing GitHub pull request or GitLab merge request by:
 
-1. Fetching the PR metadata and file diffs from the GitHub API
+1. Fetching the PR/MR metadata and file diffs from the hosting API
 2. Asking an OpenAI model to analyze the change set
 3. Rendering a structured markdown review
-4. Optionally posting that review back to the PR
+4. Optionally posting that review back to the PR/MR
 
-It can run locally first, then as a reusable GitHub Action on `pull_request` events.
+It can run locally first, as a reusable GitHub Action on `pull_request` events, or inside GitLab CI merge request pipelines.
 
 ## Requirements
 
 - Python 3.10+
 - `OPENAI_API_KEY`
-- `GITHUB_TOKEN`
+- `GITHUB_TOKEN` for GitHub
+- `GITLAB_TOKEN` for GitLab
 
-The GitHub token needs permission to read pull requests and, if you post the result, write issue comments.
+The GitHub token needs permission to read pull requests and, if you post the result, write issue comments. The GitLab token needs access to read merge requests and write merge request notes.
 
 ## Install
 
@@ -53,10 +54,34 @@ repopilot review \
   --model gpt-4.1
 ```
 
+Review a GitLab merge request locally:
+
+```bash
+repopilot review \
+  --gitlab-mr-url https://gitlab.com/GROUP/PROJECT/-/merge_requests/123 \
+  --model gpt-5.2
+```
+
+Post the generated review to a GitLab merge request:
+
+```bash
+repopilot review \
+  --gitlab-project GROUP/PROJECT \
+  --gitlab-mr-iid 123 \
+  --model gpt-5.2 \
+  --post
+```
+
 Inside GitHub Actions, RepoPilot can derive the PR directly from the event payload:
 
 ```bash
 repopilot review --from-github-event --model gpt-5.2 --post
+```
+
+Inside GitLab CI, RepoPilot can derive the MR directly from predefined CI variables:
+
+```bash
+repopilot review --from-gitlab-ci --model gpt-5.2 --post
 ```
 
 ## GitHub Action
@@ -103,11 +128,32 @@ Notes:
 - pinning to `@v0.1.0` avoids drift from future changes on `main`
 - if `OPENAI_API_KEY` is missing, the action skips cleanly with a warning instead of failing obscurely
 
+## GitLab CI
+
+Add `OPENAI_API_KEY` and `GITLAB_TOKEN` as CI/CD variables, then add a merge request pipeline job:
+
+```yaml
+repopilot_review:
+  image: python:3.11-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  variables:
+    PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  before_script:
+    - python -m pip install git+https://github.com/saadmhd07/RepoPilot.git@main
+  script:
+    - repopilot review --from-gitlab-ci --model gpt-5.2 --post
+```
+
+A ready-to-copy example also lives in `examples/gitlab-ci.yml`.
+Once GitLab support is released, pin this install URL to the release tag instead of `@main`.
+
 ## Environment variables
 
 Optional overrides:
 
 - `REPOPILOT_GITHUB_API_URL`: defaults to `https://api.github.com`
+- `REPOPILOT_GITLAB_API_URL`: defaults to `https://gitlab.com/api/v4`
 - `REPOPILOT_MAX_FILES`: defaults to `40`
 - `REPOPILOT_MAX_PATCH_CHARS`: defaults to `12000`
 - `REPOPILOT_MAX_TOTAL_CHARS`: defaults to `45000`
@@ -115,6 +161,7 @@ Optional overrides:
 ## Project layout
 
 - `src/repopilot/github.py`: GitHub API integration
+- `src/repopilot/gitlab.py`: GitLab API integration
 - `src/repopilot/llm.py`: OpenAI review engine
 - `src/repopilot/prompts/`: review prompts kept separate from application logic
 - `src/repopilot/render.py`: markdown rendering

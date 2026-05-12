@@ -1,4 +1,4 @@
-from repopilot.github import REPOPILOT_COMMENT_MARKER
+from repopilot.constants import REPOPILOT_COMMENT_MARKER
 from repopilot.models import Finding, ReviewReport
 from repopilot.render import render_review_markdown
 

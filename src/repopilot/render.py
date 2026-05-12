@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from repopilot.github import REPOPILOT_COMMENT_MARKER
+from repopilot.constants import REPOPILOT_COMMENT_MARKER
 from repopilot.models import Finding, ReviewReport
 
 

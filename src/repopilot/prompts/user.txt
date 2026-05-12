@@ -1,4 +1,4 @@
-Review the following GitHub pull request.
+Review the following pull request or merge request.
 
 Produce:
 1. A short executive summary
@@ -8,6 +8,6 @@ Produce:
 
 Only use evidence visible in the provided pull request context.
 
-Pull request context:
+Review context:
 
 {{pull_request_context}}
